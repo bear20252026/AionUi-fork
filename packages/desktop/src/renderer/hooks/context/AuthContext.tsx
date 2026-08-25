@@ -130,8 +130,8 @@ async function fetchCurrentUser(signal?: AbortSignal): Promise<AuthUser | null> 
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [status, setStatus] = useState<AuthStatus>('checking');
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<AuthStatus>(isDesktopRuntime ? 'authenticated' : 'checking');
+  const [ready, setReady] = useState(isDesktopRuntime);
   const abortRef = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
