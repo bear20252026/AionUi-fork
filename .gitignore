@@ -165,8 +165,10 @@ my-video
 
 # Vendored in-app browser MCP driver (chrome-devtools-mcp) — ships inside the
 # installer so the AI can drive the browser fully offline. The generic `build/`
-# rule above would otherwise exclude its bundled runtime, so re-include it.
-!packages/desktop/public/builtinMcpVendor/chrome-devtools-mcp/build/
+# rule above would otherwise exclude its bundled runtime, so re-include the
+# ENTIRE vendor tree (broad, so electron-builder's own .gitignore-aware copy
+# also honors it — a narrow `build/`-only exception was silently dropped).
+!**/builtinMcpVendor/**
 ${env.ELECTRON_CACHE}/
 
 # Agent Kit

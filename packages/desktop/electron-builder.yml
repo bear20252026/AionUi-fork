@@ -74,6 +74,10 @@ files:
   - '!**/node_modules/*/{docs,documentation,doc}'
   # Exclude system files
   - '!**/{.DS_Store,.git,.gitignore,.gitattributes}'
+  # Vendored offline browser driver ships via extraResources (loose at
+  # resources/builtinMcpVendor); keep it OUT of the asar to avoid a wrong-path
+  # duplicate. `public` only holds this vendor.
+  - '!public'
   - '!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}'
   - '!**/{appveyor.yml,.travis.yml,circle.yml}'
   - '!**/{npm-debug.log,yarn.lock,.yarn-metadata.json,yarn-error.log}'
@@ -103,8 +107,12 @@ files:
     to: static
 
 extraResources:
-  - from: public
-    to: .
+  # Ship the vendored offline browser driver as a LOOSE dir at
+  # resources/builtinMcpVendor (the path browserServerPort.ts resolves at
+  # runtime). Use an explicit source subdir + destination name (not `from: public
+  # to: .`, which electron-builder's .gitignore-aware copy silently dropped).
+  - from: public/builtinMcpVendor
+    to: builtinMcpVendor
   - from: resources/app.png
     to: app.png
   # aioncore binary (pre-compiled per platform/arch, ships its own bun runtime)
