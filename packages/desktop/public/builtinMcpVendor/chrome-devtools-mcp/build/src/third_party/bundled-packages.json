@@ -1,0 +1,8 @@
+{
+  "@modelcontextprotocol/sdk": "1.25.3",
+  "chrome-devtools-frontend": "1.0.1576915",
+  "core-js": "3.48.0",
+  "debug": "4.4.3",
+  "yargs": "18.0.0",
+  "puppeteer-core": "24.36.1"
+}

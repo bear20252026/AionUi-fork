@@ -15,6 +15,9 @@
  * top-level side effects (it spawns a child), so it cannot be imported by tests.
  */
 
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+
 const DEFAULT_CDP_HOST = '127.0.0.1';
 
 export type ResolveBrowserUrlDeps = {
@@ -97,11 +100,39 @@ export const resolveBridgeToken = (deps: ResolveBrowserUrlDeps): string | null =
  * through cmd.exe /c rather than shell: true; see browserServer.ts for the full rationale
  * (DEP0190, plus browserUrl would be parsed by the shell).
  */
+/**
+ * The in-app browser MCP driver (chrome-devtools-mcp) is vendored into the
+ * installer under resources/builtinMcpVendor so it can run fully offline. When
+ * that copy is present we spawn it directly with the same Node binary that
+ * launched this launcher — no npx, no network, no Chromium download.
+ */
+const VENDORED_BROWSER_CLI_CANDIDATES = [
+  // Packaged layout: <app>/resources/app.asar.unpacked/out/main -> ../../builtinMcpVendor/...
+  path.resolve(__dirname, '../../builtinMcpVendor/chrome-devtools-mcp/build/src/index.js'),
+  // Dev / alternate layout: out/main -> ../../public/builtinMcpVendor/...
+  path.resolve(__dirname, '../../public/builtinMcpVendor/chrome-devtools-mcp/build/src/index.js'),
+];
+
+const resolveVendoredBrowserCli = (): string | null => {
+  for (const candidate of VENDORED_BROWSER_CLI_CANDIDATES) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
+};
+
 export const buildMcpSpawnCommand = (deps: {
   platform: string;
   version: string;
   browserUrl: string;
 }): { command: string; args: string[] } => {
+  const vendoredCli = resolveVendoredBrowserCli();
+  if (vendoredCli) {
+    // Offline path: run the bundled chrome-devtools-mcp with the Node binary that
+    // is already running this process. Avoids relying on npx / network entirely.
+    return { command: process.execPath, args: [vendoredCli, '--browser-url', deps.browserUrl] };
+  }
+
+  // Legacy fallback: resolve over the network via npx (requires connectivity).
   const mcpArgs = ['-y', `chrome-devtools-mcp@${deps.version}`, '--browser-url', deps.browserUrl];
   return deps.platform === 'win32'
     ? { command: 'cmd.exe', args: ['/c', 'npx', ...mcpArgs] }

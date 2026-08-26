@@ -162,6 +162,11 @@ specs/**/work-*
 .spec-cache/
 .tmp/
 my-video
+
+# Vendored in-app browser MCP driver (chrome-devtools-mcp) — ships inside the
+# installer so the AI can drive the browser fully offline. The generic `build/`
+# rule above would otherwise exclude its bundled runtime, so re-include it.
+!packages/desktop/public/builtinMcpVendor/chrome-devtools-mcp/build/
 ${env.ELECTRON_CACHE}/
 
 # Agent Kit
