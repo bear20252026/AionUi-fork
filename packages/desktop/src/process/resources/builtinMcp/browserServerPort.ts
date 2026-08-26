@@ -108,9 +108,13 @@ export const resolveBridgeToken = (deps: ResolveBrowserUrlDeps): string | null =
  */
 const VENDORED_BROWSER_CLI_CANDIDATES = [
   // Packaged layout: <app>/resources/app.asar.unpacked/out/main -> ../../builtinMcpVendor/...
-  path.resolve(__dirname, '../../builtinMcpVendor/chrome-devtools-mcp/build/src/index.js'),
+  // NOTE: the vendored dir is named `bundle` (not `build`) on purpose — the repo's
+  // root .gitignore has a global `build/` rule and electron-builder's per-directory
+  // gitignore resolution skips any `build/` dir without honoring an ancestor negation,
+  // so the offline driver would never be packaged. Renaming sidesteps that entirely.
+  path.resolve(__dirname, '../../builtinMcpVendor/chrome-devtools-mcp/bundle/src/index.js'),
   // Dev / alternate layout: out/main -> ../../public/builtinMcpVendor/...
-  path.resolve(__dirname, '../../public/builtinMcpVendor/chrome-devtools-mcp/build/src/index.js'),
+  path.resolve(__dirname, '../../public/builtinMcpVendor/chrome-devtools-mcp/bundle/src/index.js'),
 ];
 
 const resolveVendoredBrowserCli = (): string | null => {
