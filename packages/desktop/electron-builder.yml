@@ -109,9 +109,11 @@ files:
 extraResources:
   # Ship the vendored offline browser driver as a LOOSE dir at
   # resources/builtinMcpVendor (the path browserServerPort.ts resolves at
-  # runtime). Use an explicit source subdir + destination name (not `from: public
-  # to: .`, which electron-builder's .gitignore-aware copy silently dropped).
-  - from: resources/builtinMcpVendor
+  # runtime). electron-builder resolves `from` relative to the REPO ROOT
+  # (D:\a\AionUi-fork\AionUi-fork), NOT packages/desktop, so the source must be
+  # the full path from repo root. (CI log confirmed: "file source doesn't exist
+  # from=.../resources/builtinMcpVendor" when the short path was used.)
+  - from: packages/desktop/resources/builtinMcpVendor
     to: builtinMcpVendor
   - from: resources/app.png
     to: app.png
