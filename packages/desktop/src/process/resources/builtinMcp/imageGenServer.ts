@@ -78,8 +78,9 @@ IMPORTANT: When user provides multiple images, ALWAYS pass ALL images to the ima
     {
       prompt: z
         .string()
+        .optional()
         .describe(
-          'The text prompt in English that must clearly specify the operation type: "Generate image: [description]" for creating new images, "Analyze image: [what to analyze]" for image recognition/analysis, or "Edit image: [modifications]" for image editing.'
+          'The text prompt in English that must clearly specify the operation type: "Generate image: [description]" for creating new images, "Analyze image: [what to analyze]" for image recognition/analysis, or "Edit image: [modifications]" for image editing. When omitted but images are supplied, the tool defaults to editing/optimizing the provided images.'
         ),
       image_uris: z
         .array(z.string())
@@ -102,13 +103,33 @@ IMPORTANT: When user provides multiple images, ALWAYS pass ALL images to the ima
         };
       }
 
+      // Graceful fallback: some models (e.g. custom gateways) emit the tool
+      // call without the required `prompt`. Instead of failing with MCP -32602,
+      // derive a sensible default so the tool still works.
+      let effectivePrompt = prompt && prompt.trim().length > 0 ? prompt.trim() : '';
+      if (!effectivePrompt) {
+        if (image_uris && image_uris.length > 0) {
+          effectivePrompt = 'Edit image: improve and refine the provided image(s)';
+        } else {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: '请先用文字描述你想生成或编辑的图片内容（例如 "Generate image: a snowy mountain landscape"），我再调用绘图工具。',
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
       const proxy = process.env.AIONUI_IMG_PROXY || undefined;
       // Trusted workspace root: the MCP server inherits the agent process cwd,
       // which the backend sets to the conversation workspace. Never accept a
       // workspace path from the model (path traversal boundary).
       const workspaceDir = process.cwd();
 
-      const result = await executeImageGeneration({ prompt, image_uris }, provider, workspaceDir, proxy);
+      const result = await executeImageGeneration({ prompt: effectivePrompt, image_uris }, provider, workspaceDir, proxy);
 
       if (!result.success) {
         return {
