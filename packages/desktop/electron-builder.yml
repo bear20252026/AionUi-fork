@@ -111,7 +111,7 @@ extraResources:
   # resources/builtinMcpVendor (the path browserServerPort.ts resolves at
   # runtime). Use an explicit source subdir + destination name (not `from: public
   # to: .`, which electron-builder's .gitignore-aware copy silently dropped).
-  - from: public/builtinMcpVendor
+  - from: resources/builtinMcpVendor
     to: builtinMcpVendor
   - from: resources/app.png
     to: app.png
