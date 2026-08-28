@@ -110,16 +110,20 @@ export const buildListPayload = (wsUrl: string, title: string, url: string) => [
 /**
  * 决定一条入站命令怎么处理。
  *
- * 关键取舍：Target.createTarget 明确报错而不是静默忽略。这个命令的语义是「新开一个
- * 标签页」，我们做不到，但如果假装成功、返回那个唯一的 targetId，Agent 会以为自己开了
- * 新页面，实际上在原页面上继续操作 —— 那种错法比直接失败更难查。宁可让它拿到一个
- * 说明清楚的错误。
+ * 关于 Target.createTarget：单标签浏览器没有「新开标签」的语义，但我们选择把唯一的固定
+ * 标签（SINGLE_TARGET_ID）交回去，而不是报错。原因：chrome-devtools-mcp 在 newPage()/
+ * navigate 等流程里会调用 createTarget；若硬拒，那些工具直接失败、AI 完全无法驱动浏览器。
+ * 把唯一标签交回去，puppeteer 的 createTarget 会拿到这个 targetId，随后 attachToTarget
+ * 也命中 SINGLE_TARGET_ID 成功 —— 整个控制流就通了。代价只是「Agent 以为开了新页面，其实
+ * 是在同一个页面上操作」，对单标签场景完全可以接受，也正好是我们想要的行为。
  *
- * Deliberate choice: Target.createTarget errors out rather than silently no-oping.
- * It means "open a new tab", which we cannot do; pretending it succeeded and handing
- * back the one existing targetId would leave the agent believing it had a fresh page
- * while it kept driving the old one — a failure far harder to diagnose than an explicit
- * error.
+ * On Target.createTarget: a single-tab browser has no "open new tab" semantics, but we
+ * return the one fixed target (SINGLE_TARGET_ID) instead of erroring. chrome-devtools-mcp
+ * calls createTarget inside newPage()/navigate; hard-rejecting it breaks those tools and
+ * the agent cannot drive the browser at all. Returning the id lets puppeteer's createTarget
+ * resolve, and the follow-up attachToTarget also matches SINGLE_TARGET_ID — the control
+ * flow connects. The only cost is the agent believing it opened a fresh page while actually
+ * driving the same one, which is fine (and desired) for a single-tab browser.
  */
 export const decideCdpCommand = (req: CdpRequest, getTargetInfo: () => TargetInfo): CdpDecision => {
   const method = req.method ?? '';
@@ -238,10 +242,11 @@ export const decideCdpCommand = (req: CdpRequest, getTargetInfo: () => TargetInf
       return { kind: 'reply', payload: {} };
 
     case 'Target.createTarget':
-      return {
-        kind: 'error',
-        message: 'AionUi in-app browser exposes a single fixed tab; Target.createTarget is not supported.',
-      };
+      // 单标签浏览器：没有「新开标签」的语义，直接把唯一固定标签交回去，
+      // 让 chrome-devtools-mcp 的 newPage()/navigate 流程跑通。
+      // Single-tab browser: no "open new tab" semantics, so hand back the one fixed
+      // target and let chrome-devtools-mcp's newPage()/navigate flow succeed.
+      return { kind: 'reply', payload: { targetId: SINGLE_TARGET_ID } };
 
     case 'Target.createBrowserContext':
     case 'Target.disposeBrowserContext':
