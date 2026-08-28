@@ -122,10 +122,14 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     const selectedSessionMcpServers = availableMcpServers
       .filter((server) => selectedMcpServerIdSet.has(server.id) && server.builtin === true)
       .map((server) => toSessionMcpServer(server));
-    // 免登录版：未手动选择 MCP 时，默认启用所有已连接的用户 MCP 服务器，
+    // 免登录版：未手动选择 MCP 时，默认启用所有已连接的 MCP 服务器，
     // 让 MCP 在聊天框“+”菜单与 Agent 工具调用卡片中始终可用（本地全开）。
+    // 例外：排除内置的 `chrome-devtools`（它默认关闭，且会自行拉起一个独立
+    // Chrome 窗口，用户在 APP 内看不到，不是我们想要的“网页控制”）。
+    // 保留 `aionui-browser`（应用内浏览器控制，连 APP 自己的 CDP，即“网页控制”）
+    // 以及 `aionui-image-generation` 等内置工具。
     const defaultSelectedMcpServerIds =
-      selectedMcpServerIds ?? availableMcpServers.filter((s) => s.builtin !== true).map((s) => s.id);
+      selectedMcpServerIds ?? availableMcpServers.filter((s) => s.name !== 'chrome-devtools').map((s) => s.id);
     const defaultSelectedUserMcpServerIds = availableMcpServers
       .filter((server) => (defaultSelectedMcpServerIds ?? []).includes(server.id) && server.builtin !== true)
       .map((server) => server.id);
