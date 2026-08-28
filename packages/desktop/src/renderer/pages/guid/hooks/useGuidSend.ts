@@ -191,6 +191,9 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
             default_files: files.map(chatFileRefPath),
             workspace: finalWorkspace,
             custom_workspace: isCustomWorkspace,
+            // 免登录本地版：默认开启对话内系统搜索（web_search），让所有模型都能在
+            // 对话里直接搜索并呈现网址，不依赖 provider 原生 web_search 能力。
+            web_search_engine: 'default',
             selected_mcp_server_ids: selectedUserMcpServerIdsToSend,
             selected_session_mcp_servers: selectedSessionMcpServersToSend,
           },
@@ -245,6 +248,8 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           workspace: finalWorkspace,
           custom_workspace: isCustomWorkspace,
           default_files: files.map(chatFileRefPath),
+          // 免登录本地版：默认开启对话内系统搜索（web_search）
+          web_search_engine: 'default',
           selected_mcp_server_ids: selectedUserMcpServerIdsToSend,
           selected_session_mcp_servers:
             selectedMcpServerIds !== undefined ? selectedSessionMcpServers : selectedSessionMcpServersToSend,

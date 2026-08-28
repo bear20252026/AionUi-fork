@@ -84,6 +84,10 @@ export const hasModelCapability = (model: IProvider, type: ModelType): boolean |
   const userSelected = getUserSelectedCapability(model, type);
   if (userSelected !== undefined) {
     result = userSelected;
+  } else if (type === 'web_search') {
+    // 免登录本地版：对话内联网搜索是系统自带能力，默认对所有模型开放
+    // （仅在用户于模型设置里手动关闭时才不启用）
+    result = true;
   } else {
     // 2. 优先级2：特定 provider 规则
     const providerRule = getProviderCapabilityRule(model.platform, type);
