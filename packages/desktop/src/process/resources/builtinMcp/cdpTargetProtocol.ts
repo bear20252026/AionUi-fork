@@ -243,10 +243,18 @@ export const decideCdpCommand = (req: CdpRequest, getTargetInfo: () => TargetInf
 
     case 'Target.createTarget':
       // 单标签浏览器：没有「新开标签」的语义，直接把唯一固定标签交回去，
-      // 让 chrome-devtools-mcp 的 newPage()/navigate 流程跑通。
+      // 并补发 targetCreated，让 chrome-devtools-mcp 的 newPage() 流程不会卡在
+      // 等待「新页面已创建」事件上（否则 Agent 调 new_page 会一直 hang，表现成
+      // 「AI 只能看已打开过的页面、无法自己开新页面」）。
       // Single-tab browser: no "open new tab" semantics, so hand back the one fixed
-      // target and let chrome-devtools-mcp's newPage()/navigate flow succeed.
-      return { kind: 'reply', payload: { targetId: SINGLE_TARGET_ID } };
+      // target, and also emit targetCreated so chrome-devtools-mcp's newPage() does not
+      // hang waiting for a fresh-page event (otherwise the agent appears unable to open
+      // a new page and can only act on the one already open).
+      return {
+        kind: 'reply-and-emit',
+        payload: { targetId: SINGLE_TARGET_ID },
+        emit: [{ method: 'Target.targetCreated', params: { targetInfo: getTargetInfo() } }],
+      };
 
     case 'Target.createBrowserContext':
     case 'Target.disposeBrowserContext':
