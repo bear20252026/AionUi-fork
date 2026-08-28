@@ -122,7 +122,10 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     const selectedSessionMcpServers = availableMcpServers
       .filter((server) => selectedMcpServerIdSet.has(server.id) && server.builtin === true)
       .map((server) => toSessionMcpServer(server));
-    const defaultSelectedMcpServerIds = assistantDefaultMcpIds;
+    // 免登录版：未手动选择 MCP 时，默认启用所有已连接的用户 MCP 服务器，
+    // 让 MCP 在聊天框“+”菜单与 Agent 工具调用卡片中始终可用（本地全开）。
+    const defaultSelectedMcpServerIds =
+      selectedMcpServerIds ?? availableMcpServers.filter((s) => s.builtin !== true).map((s) => s.id);
     const defaultSelectedUserMcpServerIds = availableMcpServers
       .filter((server) => (defaultSelectedMcpServerIds ?? []).includes(server.id) && server.builtin !== true)
       .map((server) => server.id);
